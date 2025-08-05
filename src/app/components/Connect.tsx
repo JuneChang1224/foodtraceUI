@@ -4,14 +4,6 @@ import React from 'react';
 
 export function Connect() {
   return (
-    // <div>
-    //   <appkit-button
-    //     label="Account Connect"
-    //     balance="hide"
-    //     size="sm"
-    //     loadingLabel="Connecting"
-    //   />
-    // </div>
     <div>
       <appkit-button
         class="wallet-connect-btn"
