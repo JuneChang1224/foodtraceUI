@@ -54,7 +54,7 @@ export default function ConsumerProductPage({
       <p>
         <strong>Ingredients:</strong> {product.ingredients}
       </p>
-      <button onClick={() => router.push('/consumer')}>Back</button>
+      <button onClick={() => router.push('/supplier')}>Back</button>
     </div>
   );
 }

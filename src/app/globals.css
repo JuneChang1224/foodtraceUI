@@ -481,20 +481,20 @@ form,
   }
 }
 
-/* Inspector Dashboard */
-.inspector-dashboard {
+/* Supplier Dashboard */
+.supplier-dashboard {
   padding: 2rem 1rem;
   max-width: 1000px;
   margin: 0 auto;
   text-align: center;
 }
 
-.inspector-dashboard h1 {
+.supplier-dashboard h1 {
   font-size: 2rem;
   margin-bottom: 0.5rem;
 }
 
-.inspector-dashboard p {
+.supplier-dashboard p {
   margin-bottom: 2rem;
   color: #555;
 }
@@ -504,6 +504,21 @@ form,
   gap: 0.5rem;
   justify-content: center;
   flex-wrap: wrap;
+}
+
+.view-btn {
+  background-color: #10b9b3;
+  color: white;
+  padding: 0.5rem 1rem;
+  margin-right: 0.5rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.view-btn:hover {
+  background-color: #059669;
 }
 
 .approve-btn,

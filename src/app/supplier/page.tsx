@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Header } from '@/app/components/Header';
 import { Footer } from '@/app/components/Footer';
+import { useRouter } from 'next/navigation';
 
 type Product = {
   id: number;
@@ -29,8 +30,9 @@ const initialProducts: Product[] = [
   },
 ];
 
-export default function InspectorDashboard() {
+export default function SupplierDashboard() {
   const [products, setProducts] = useState<Product[]>(initialProducts);
+  const router = useRouter();
 
   const handleDecision = (id: number, decision: 'Approved' | 'Rejected') => {
     const updated = products.map((product) =>
@@ -39,11 +41,16 @@ export default function InspectorDashboard() {
     setProducts(updated);
   };
 
+  const handleViewProduct = (id: number) => {
+    // const cid = ''; // Replace with real CID from QR later
+    router.push(`/supplier/cid`);
+  };
+
   return (
     <div>
       <Header />
-      <main className="inspector-dashboard">
-        <h1>🔍 Inspector Dashboard</h1>
+      <main className="supplier-dashboard">
+        <h1>🔍 Supplier Dashboard</h1>
         <p>Review submitted products and approve or reject them.</p>
 
         <div className="product-table-wrapper">
@@ -69,6 +76,13 @@ export default function InspectorDashboard() {
                   <td>
                     {product.status === 'Pending' ? (
                       <div className="action-buttons">
+                        <button
+                          className="view-btn"
+                          onClick={() => handleViewProduct(product.id)}
+                        >
+                          🔍 View
+                        </button>
+
                         <button
                           className="approve-btn"
                           onClick={() => handleDecision(product.id, 'Approved')}

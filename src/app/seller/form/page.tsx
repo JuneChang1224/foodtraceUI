@@ -15,7 +15,6 @@ export default function ProductForm() {
     origin: '',
     productionDate: '',
     batchNumber: '',
-    price: '',
   });
 
   const [loading, setLoading] = useState(false);
@@ -31,22 +30,15 @@ export default function ProductForm() {
     setStatus('idle');
 
     // Basic validation
-    const {
-      productName,
-      ingredients,
-      origin,
-      productionDate,
-      batchNumber,
-      price,
-    } = formData;
+    const { productName, ingredients, origin, productionDate, batchNumber } =
+      formData;
 
     if (
       !productName.trim() ||
       !ingredients.trim() ||
       !origin.trim() ||
       !productionDate ||
-      !batchNumber.trim() ||
-      !price.trim()
+      !batchNumber.trim()
     ) {
       setStatus('error');
       alert('❌ All fields must be filled.');
@@ -57,12 +49,6 @@ export default function ProductForm() {
     if (productionDate > today) {
       setStatus('error');
       alert('❌ Production date cannot be in the future.');
-      return;
-    }
-
-    if (isNaN(Number(price)) || Number(price) <= 0) {
-      setStatus('error');
-      alert('❌ Price must be a positive number.');
       return;
     }
 
@@ -113,8 +99,6 @@ export default function ProductForm() {
           placeholder="Batch Number"
           onChange={handleChange}
         />
-        <p>Price</p>
-        <input name="price" placeholder="0.00" onChange={handleChange} />
         <p>Certificate</p>
         <input
           name="Certificate"

@@ -16,17 +16,17 @@ export default function LoginPage() {
     e.preventDefault();
 
     // Simulate login logic
-    if (email === 'consumer@example.com' && password === '123456') {
+    if (email === 'consumer@mail.com' && password === '123456') {
       login();
       router.push('/consumer');
-    } else if (email === 'seller@example.com' && password === '1234') {
+    } else if (email === 'seller@mail.com' && password === '1234') {
       login();
       router.push('/seller');
-    } else if (email === 'inspector@example.com' && password === '12345') {
+    } else if (email === 'supplier@mail.com' && password === '12345') {
       login();
-      router.push('/inspector');
+      router.push('/supplier');
     } else {
-      alert('❌ Invalid credentials. Try: consumer@example.com / 123456');
+      alert('❌ Invalid credentials. Example: user@example.com / 000000');
     }
   };
 
