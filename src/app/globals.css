@@ -353,7 +353,7 @@ header .navbar .connect-button:hover {
   }
 }
 
-/* Product Form */
+/* Add Product Form */
 form,
 .product-form {
   background-color: #ffffff;
@@ -371,13 +371,15 @@ form,
 }
 
 .product-form input,
-.product-form textarea {
+.product-form textarea,
+.product-form select {
   width: 100%;
   padding: 0.75rem;
   margin-bottom: 1rem;
   border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 1rem;
+  background-color: #ffffff;
 }
 
 .product-form textarea {

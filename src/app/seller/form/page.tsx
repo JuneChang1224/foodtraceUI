@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Select from 'react-select';
 
 import { Header } from '@/app/components/Header';
 import { Footer } from '@/app/components/Footer';
@@ -9,67 +10,57 @@ import { Footer } from '@/app/components/Footer';
 export default function ProductForm() {
   const router = useRouter();
 
+  const ingredientOptions = [
+    { value: 'Sugar', label: 'Sugar' },
+    { value: 'Salt', label: 'Salt' },
+    { value: 'Flour', label: 'Flour' },
+    { value: 'Rice', label: 'Rice' },
+    { value: 'Milk', label: 'Milk' },
+    { value: 'Eggs', label: 'Eggs' },
+    { value: 'Butter', label: 'Butter' },
+    { value: 'Olive Oil', label: 'Olive Oil' },
+  ];
+
   const [formData, setFormData] = useState({
     productName: '',
-    ingredients: '',
+    ingredients: [] as string[],
     origin: '',
     productionDate: '',
     batchNumber: '',
+    certificate: '',
   });
 
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  const handleIngredientsChange = (
+    selectedOptions: readonly { value: string; label: string }[] | null
   ) => {
+    setFormData({
+      ...formData,
+      ingredients: selectedOptions
+        ? selectedOptions.map((opt) => opt.value)
+        : [],
+    });
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async () => {
-    setStatus('idle');
-
-    // Basic validation
-    const { productName, ingredients, origin, productionDate, batchNumber } =
-      formData;
-
-    if (
-      !productName.trim() ||
-      !ingredients.trim() ||
-      !origin.trim() ||
-      !productionDate ||
-      !batchNumber.trim()
-    ) {
+  const handleSubmit = () => {
+    if (!formData.productName.trim() || formData.ingredients.length === 0) {
       setStatus('error');
       alert('❌ All fields must be filled.');
       return;
     }
 
-    const today = new Date().toISOString().split('T')[0];
-    if (productionDate > today) {
-      setStatus('error');
-      alert('❌ Production date cannot be in the future.');
-      return;
-    }
-
-    if (batchNumber.trim().length < 5) {
-      setStatus('error');
-      alert('❌ Batch number must be at least 5 characters.');
-      return;
-    }
-
-    // Simulate successful submission
     setLoading(true);
-    try {
-      setTimeout(() => {
-        setLoading(false);
-        setStatus('success');
-        router.push('/seller/confirmation');
-      }, 1500);
-    } catch (error) {
+    setTimeout(() => {
       setLoading(false);
-      setStatus('error');
-    }
+      setStatus('success');
+      router.push('/seller/confirmation');
+    }, 1500);
   };
 
   return (
@@ -77,31 +68,40 @@ export default function ProductForm() {
       <Header />
       <div className="product-form">
         <h1>Add New Product</h1>
+
         <p>Product Name</p>
         <input
           name="productName"
           placeholder="Product Name"
           onChange={handleChange}
         />
+
         <p>Ingredients</p>
-        <textarea
+        <Select
+          isMulti
           name="ingredients"
-          placeholder="Ingredients"
-          onChange={handleChange}
+          options={ingredientOptions}
+          className="basic-multi-select"
+          classNamePrefix="select"
+          onChange={handleIngredientsChange}
         />
+
         <p>Origin</p>
         <input name="origin" placeholder="Origin" onChange={handleChange} />
+
         <p>Production Date</p>
         <input name="productionDate" type="date" onChange={handleChange} />
+
         <p>Batch Number</p>
         <input
           name="batchNumber"
           placeholder="Batch Number"
           onChange={handleChange}
         />
+
         <p>Certificate</p>
         <input
-          name="Certificate"
+          name="certificate"
           placeholder="Certificate"
           onChange={handleChange}
         />
