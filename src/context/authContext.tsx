@@ -33,33 +33,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const handleWalletConnect = async (walletAddress: string) => {
     console.log('Wallet connected:', walletAddress);
-    
+
     try {
       // Call smart contract to get user role
-      const { role, displayName, registeredAt } = await getUserRole(walletAddress);
-      
+      const { role, displayName, registeredAt } = await getUserRole(
+        walletAddress
+      );
+
       console.log('User role from contract:', role);
       console.log('User display name:', displayName);
       console.log('Registered at:', registeredAt);
-      
+
       // Store wallet data
       localStorage.setItem('session', 'true');
       localStorage.setItem('userAddress', walletAddress);
       localStorage.setItem('userRole', role.toString());
       localStorage.setItem('userDisplayName', displayName);
       localStorage.setItem('registeredAt', registeredAt.toString());
-      
+
       setIsLoggedIn(true);
-      
     } catch (error) {
       console.error('Failed to get user role:', error);
-      
+
       // Store wallet address even if contract call fails
       localStorage.setItem('session', 'true');
       localStorage.setItem('userAddress', walletAddress);
       localStorage.setItem('userRole', '0');
       localStorage.setItem('userDisplayName', 'Unregistered User');
-      
+
       setIsLoggedIn(true);
     }
   };

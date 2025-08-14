@@ -7,7 +7,7 @@ export function Connect() {
     <div>
       <appkit-button
         class="wallet-connect-btn"
-        label="Account Connect"
+        label="Wallet Connect"
         balance="hide"
         size="sm"
         loadingLabel="Connecting"

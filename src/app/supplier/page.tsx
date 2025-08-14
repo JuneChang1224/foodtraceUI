@@ -36,8 +36,9 @@ const initialProducts: Product[] = [
 
 export default function SupplierDashboard() {
   const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const router = useRouter();
-  
+
   // Ingredient modal states
   const [isIngredientModalOpen, setIsIngredientModalOpen] = useState(false);
   const [newIngredient, setNewIngredient] = useState({
@@ -63,8 +64,14 @@ export default function SupplierDashboard() {
   };
 
   const handleViewProduct = (id: number) => {
-    // const cid = ''; // Replace with real CID from QR later
-    router.push(`/supplier/cid`);
+    const product = products.find((p) => p.id === id);
+    if (product) {
+      setSelectedProduct(product);
+    }
+  };
+
+  const closeModal = () => {
+    setSelectedProduct(null);
   };
 
   const handleAddIngredient = async () => {
@@ -94,7 +101,7 @@ export default function SupplierDashboard() {
       console.log('Adding ingredient with:', {
         name: newIngredient.name,
         supplierAddr: userAddress,
-        category: newIngredient.type
+        category: newIngredient.type,
       });
 
       // Call smart contract addIngredient function
@@ -103,9 +110,9 @@ export default function SupplierDashboard() {
         abi: CompleteSysABI.abi,
         functionName: 'addIngredient',
         args: [
-          newIngredient.name,           // name
+          newIngredient.name, // name
           userAddress as `0x${string}`, // supplierAddr (from current user)
-          newIngredient.type            // category (from type field)
+          newIngredient.type, // category (from type field)
         ],
       });
 
@@ -114,12 +121,17 @@ export default function SupplierDashboard() {
       // Reset form and close modal
       setNewIngredient({ name: '', type: '' });
       setIsIngredientModalOpen(false);
-      
-      alert('Ingredient added successfully!');
 
-    } catch (error: any) {
+      alert('Ingredient added successfully!');
+    } catch (error: unknown) {
       console.error('Error adding ingredient:', error);
-      setIngredientError(error.message || 'Failed to add ingredient. Please try again.');
+      if (error instanceof Error) {
+        setIngredientError(
+          error.message || 'Failed to add ingredient. Please try again.'
+        );
+      } else {
+        setIngredientError('Failed to add ingredient. Please try again.');
+      }
     } finally {
       setIsIngredientLoading(false);
     }
@@ -139,8 +151,8 @@ export default function SupplierDashboard() {
 
         <div className="dashboard-header">
           <h2>Products</h2>
-          <button 
-            className="add-user-btn" 
+          <button
+            className="add-user-btn"
             onClick={() => setIsIngredientModalOpen(true)}
           >
             Add Ingredient
@@ -191,7 +203,14 @@ export default function SupplierDashboard() {
                         </button>
                       </div>
                     ) : (
-                      <span>-</span>
+                      <div className="action-buttons">
+                        <button
+                          className="view-btn"
+                          onClick={() => handleViewProduct(product.id)}
+                        >
+                          🔍 View
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -202,10 +221,13 @@ export default function SupplierDashboard() {
 
         {/* Add Ingredient Modal */}
         {isIngredientModalOpen && (
-          <div className="modal-overlay" onClick={() => setIsIngredientModalOpen(false)}>
+          <div
+            className="modal-overlay"
+            onClick={() => setIsIngredientModalOpen(false)}
+          >
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <h2>Add New Ingredient</h2>
-              
+
               <label>Ingredient Name</label>
               <input
                 type="text"
@@ -229,10 +251,12 @@ export default function SupplierDashboard() {
               />
 
               {/* Error Message */}
-              {ingredientError && <p className="error-message">{ingredientError}</p>}
+              {ingredientError && (
+                <p className="error-message">{ingredientError}</p>
+              )}
 
               <div className="modal-actions">
-                <button 
+                <button
                   onClick={handleAddIngredient}
                   disabled={isIngredientLoading}
                 >
@@ -251,6 +275,30 @@ export default function SupplierDashboard() {
         )}
       </main>
       <Footer />
+
+      {selectedProduct && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()} // Prevent close when clicking inside
+          >
+            <h2>Product Details</h2>
+            <p>
+              <strong>Name:</strong> {selectedProduct.name}
+            </p>
+            <p>
+              <strong>Batch:</strong> {selectedProduct.batch}
+            </p>
+            <p>
+              <strong>Date:</strong> {selectedProduct.date}
+            </p>
+            <p>
+              <strong>Status:</strong> {selectedProduct.status}
+            </p>
+            <button onClick={closeModal}>Close</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

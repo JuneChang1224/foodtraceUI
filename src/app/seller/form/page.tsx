@@ -86,23 +86,10 @@ export default function ProductForm() {
           onChange={handleIngredientsChange}
         />
 
-        <p>Origin</p>
-        <input name="origin" placeholder="Origin" onChange={handleChange} />
-
-        <p>Production Date</p>
-        <input name="productionDate" type="date" onChange={handleChange} />
-
         <p>Batch Number</p>
         <input
           name="batchNumber"
           placeholder="Batch Number"
-          onChange={handleChange}
-        />
-
-        <p>Certificate</p>
-        <input
-          name="certificate"
-          placeholder="Certificate"
           onChange={handleChange}
         />
 

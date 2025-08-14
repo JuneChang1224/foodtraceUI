@@ -4,7 +4,6 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '../../components/Header';
 import { Footer } from '../../components/Footer';
-import { IPFSUpload } from '../../components/IPFSUpload';
 
 export default function ConfirmationPage() {
   const router = useRouter();
@@ -19,8 +18,6 @@ export default function ConfirmationPage() {
           confirmation QR code soon.
         </p>
         <button onClick={() => router.push('/seller')}>Back to Home</button>
-
-        <IPFSUpload />
       </div>
       <Footer />
     </div>

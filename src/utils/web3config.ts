@@ -35,7 +35,6 @@ export async function getUserRole(userAddress: string) {
     if (!UserHandlingContractAddress) {
       throw new Error('Contract address not found');
     }
-
     const result = await readContract(config, {
       address: UserHandlingContractAddress as `0x${string}`,
       abi: UserHandlingABI.abi,
@@ -45,18 +44,18 @@ export async function getUserRole(userAddress: string) {
 
     // Type the result properly
     const typedResult = result as [number, string, bigint];
-    
+
     return {
       role: Number(typedResult[0]),
       displayName: typedResult[1],
-      registeredAt: Number(typedResult[2])
+      registeredAt: Number(typedResult[2]),
     };
   } catch (error) {
     console.error('Error getting user role:', error);
     return {
       role: 0, // Unregistered
       displayName: 'Unregistered User',
-      registeredAt: 0
+      registeredAt: 0,
     };
   }
 }

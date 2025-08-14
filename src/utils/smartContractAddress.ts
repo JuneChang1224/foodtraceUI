@@ -1,5 +1,5 @@
 export const UserHandlingContractAddress =
   process.env.NEXT_PUBLIC_USERHANDLING_CONTRACT_ADDRESS;
-export const ICOContractAddress = process.env.NEXT_PUBLIC_ICO_CONTRACT_ADDRESS;
-export const SupplyChainContractAddress = 
+
+export const SupplyChainContractAddress =
   process.env.NEXT_PUBLIC_SUPPLYCHAIN_CONTRACT_ADDRESS;

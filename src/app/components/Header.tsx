@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Connect } from './Connect';
 import { useAuth } from '@/context/authContext';
 import { useRouter } from 'next/navigation';
+import { useDisconnect } from 'wagmi';
+import { usePathname } from 'next/navigation';
 
 export function Header() {
   const { isLoggedIn, logout } = useAuth();
@@ -11,6 +13,8 @@ export function Header() {
   const [userAddress, setUserAddress] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userDisplayName, setUserDisplayName] = useState<string | null>(null);
+  const { disconnect } = useDisconnect();
+  const pathname = usePathname();
 
   useEffect(() => {
     // Only access localStorage on client side
@@ -21,18 +25,47 @@ export function Header() {
     }
   }, [isLoggedIn]); // Re-run when login status changes
 
+  useEffect(() => {
+    if (!userRole) return;
+
+    // Only redirect if not in the right section
+    switch (userRole) {
+      case '0':
+        if (!pathname.startsWith('/consumer')) router.push('/consumer');
+        break;
+      case '1':
+        if (!pathname.startsWith('/manager')) router.push('/manager');
+        break;
+      case '2':
+        if (!pathname.startsWith('/seller')) router.push('/seller');
+        break;
+      case '3':
+        if (!pathname.startsWith('/supplier')) router.push('/supplier');
+        break;
+    }
+  }, [userRole, router, pathname]);
+
   const handleLogout = () => {
+    disconnect(); // ✅ disconnect MetaMask session
     logout();
+    localStorage.removeItem('userAddress');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userDisplayName');
     router.push('/login'); // redirect to login page
   };
 
   const getRoleText = (role: string) => {
-    switch(role) {
-      case '0': return 'Unregistered';
-      case '1': return 'Manager';
-      case '2': return 'Seller';
-      case '3': return 'Supplier';
-      default: return 'Unknown';
+    switch (role) {
+      case '0':
+        return 'Unregistered';
+      case '1':
+        return 'Manager';
+      case '2':
+        return 'Seller';
+      case '3':
+        return 'Supplier';
+      default:
+        return 'Unknown';
     }
   };
 
@@ -57,19 +90,19 @@ export function Header() {
           {isLoggedIn && userRole && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
               {/* User verification display */}
-              <div style={{ 
-                background: '#f8f9fa', 
-                padding: '8px 12px', 
-                borderRadius: '6px', 
-                fontSize: '12px',
-                border: '1px solid #e9ecef'
-              }}>
+              <div
+                style={{
+                  background: '#f8f9fa',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  border: '1px solid #e9ecef',
+                }}
+              >
                 <div style={{ fontWeight: 'bold', color: '#495057' }}>
-                  Role: {getRoleText(userRole)} 
+                  Role: {getRoleText(userRole)}
                 </div>
-                <div style={{ color: '#6c757d' }}>
-                  {userDisplayName}
-                </div>
+                <div style={{ color: '#6c757d' }}>{userDisplayName}</div>
                 <div style={{ color: '#6c757d', fontSize: '10px' }}>
                   {userAddress?.slice(0, 6)}...{userAddress?.slice(-4)}
                 </div>
