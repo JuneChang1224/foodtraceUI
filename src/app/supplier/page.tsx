@@ -1,9 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from '@/app/components/Header';
 import { Footer } from '@/app/components/Footer';
 import { useRouter } from 'next/navigation';
+import { writeContract } from '@wagmi/core';
+import { config } from '@/utils/web3config';
+import { SupplyChainContractAddress } from '@/utils/smartContractAddress';
+import CompleteSysABI from '@/abi/CompleteSys.json';
 
 type Product = {
   id: number;
@@ -33,6 +37,23 @@ const initialProducts: Product[] = [
 export default function SupplierDashboard() {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const router = useRouter();
+  
+  // Ingredient modal states
+  const [isIngredientModalOpen, setIsIngredientModalOpen] = useState(false);
+  const [newIngredient, setNewIngredient] = useState({
+    name: '',
+    type: '',
+  });
+  const [userAddress, setUserAddress] = useState<string | null>(null);
+  const [ingredientError, setIngredientError] = useState('');
+  const [isIngredientLoading, setIsIngredientLoading] = useState(false);
+
+  // Get user address from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setUserAddress(localStorage.getItem('userAddress'));
+    }
+  }, []);
 
   const handleDecision = (id: number, decision: 'Approved' | 'Rejected') => {
     const updated = products.map((product) =>
@@ -46,12 +67,85 @@ export default function SupplierDashboard() {
     router.push(`/supplier/cid`);
   };
 
+  const handleAddIngredient = async () => {
+    setIngredientError('');
+    setIsIngredientLoading(true);
+
+    // Validation
+    if (!newIngredient.name.trim() || !newIngredient.type.trim()) {
+      setIngredientError('Please fill in all fields.');
+      setIsIngredientLoading(false);
+      return;
+    }
+
+    if (!userAddress) {
+      setIngredientError('User address not found. Please connect your wallet.');
+      setIsIngredientLoading(false);
+      return;
+    }
+
+    if (!SupplyChainContractAddress) {
+      setIngredientError('Supply chain contract address not configured.');
+      setIsIngredientLoading(false);
+      return;
+    }
+
+    try {
+      console.log('Adding ingredient with:', {
+        name: newIngredient.name,
+        supplierAddr: userAddress,
+        category: newIngredient.type
+      });
+
+      // Call smart contract addIngredient function
+      const result = await writeContract(config, {
+        address: SupplyChainContractAddress as `0x${string}`,
+        abi: CompleteSysABI.abi,
+        functionName: 'addIngredient',
+        args: [
+          newIngredient.name,           // name
+          userAddress as `0x${string}`, // supplierAddr (from current user)
+          newIngredient.type            // category (from type field)
+        ],
+      });
+
+      console.log('Transaction hash:', result);
+
+      // Reset form and close modal
+      setNewIngredient({ name: '', type: '' });
+      setIsIngredientModalOpen(false);
+      
+      alert('Ingredient added successfully!');
+
+    } catch (error: any) {
+      console.error('Error adding ingredient:', error);
+      setIngredientError(error.message || 'Failed to add ingredient. Please try again.');
+    } finally {
+      setIsIngredientLoading(false);
+    }
+  };
+
+  const handleCancelIngredient = () => {
+    setIsIngredientModalOpen(false);
+    setNewIngredient({ name: '', type: '' });
+  };
+
   return (
     <div>
       <Header />
       <main className="supplier-dashboard">
         <h1>🔍 Supplier Dashboard</h1>
         <p>Review submitted products and approve or reject them.</p>
+
+        <div className="dashboard-header">
+          <h2>Products</h2>
+          <button 
+            className="add-user-btn" 
+            onClick={() => setIsIngredientModalOpen(true)}
+          >
+            Add Ingredient
+          </button>
+        </div>
 
         <div className="product-table-wrapper">
           <table className="product-table">
@@ -105,6 +199,56 @@ export default function SupplierDashboard() {
             </tbody>
           </table>
         </div>
+
+        {/* Add Ingredient Modal */}
+        {isIngredientModalOpen && (
+          <div className="modal-overlay" onClick={() => setIsIngredientModalOpen(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <h2>Add New Ingredient</h2>
+              
+              <label>Ingredient Name</label>
+              <input
+                type="text"
+                value={newIngredient.name}
+                onChange={(e) =>
+                  setNewIngredient({ ...newIngredient, name: e.target.value })
+                }
+                placeholder="Enter ingredient name"
+                disabled={isIngredientLoading}
+              />
+
+              <label>Ingredient Type</label>
+              <input
+                type="text"
+                value={newIngredient.type}
+                onChange={(e) =>
+                  setNewIngredient({ ...newIngredient, type: e.target.value })
+                }
+                placeholder="Enter ingredient type (e.g., Vegetables, Herbs)"
+                disabled={isIngredientLoading}
+              />
+
+              {/* Error Message */}
+              {ingredientError && <p className="error-message">{ingredientError}</p>}
+
+              <div className="modal-actions">
+                <button 
+                  onClick={handleAddIngredient}
+                  disabled={isIngredientLoading}
+                >
+                  {isIngredientLoading ? 'Adding...' : 'Add'}
+                </button>
+                <button
+                  className="cancel-btn"
+                  onClick={handleCancelIngredient}
+                  disabled={isIngredientLoading}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
       <Footer />
     </div>

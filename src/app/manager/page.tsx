@@ -2,12 +2,16 @@
 import React, { useState } from 'react';
 import { Header } from '@/app/components/Header';
 import { Footer } from '@/app/components/Footer';
+import { writeContract } from '@wagmi/core';
+import { config } from '@/utils/web3config';
+import { UserHandlingContractAddress } from '@/utils/smartContractAddress';
+import UserHandlingABI from '@/abi/Userhandling.json';
 
 interface User {
   id: number;
   name: string;
   wallet: string;
-  role: 'Seller' | 'Supplier';
+  role: 'Manager' | 'Seller' | 'Supplier';
 }
 
 export default function ManagerDashboard() {
@@ -28,30 +32,72 @@ export default function ManagerDashboard() {
     role: 'Seller',
   });
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleAddUser = () => {
+  const handleAddUser = async () => {
     setError(''); // reset error
+    setIsLoading(true);
 
+    // Validation
     if (!newUser.name.trim() || !newUser.wallet.trim()) {
       setError('Please fill in all fields.');
+      setIsLoading(false);
       return;
     }
 
-    // Wallet uniqueness check (case insensitive)
-    const walletExists = users.some(
-      (u) =>
-        u.wallet.trim().toLowerCase() === newUser.wallet.trim().toLowerCase()
-    );
-
-    if (walletExists) {
-      setError('This wallet address already exists for another user.');
+    // Check wallet address format
+    if (!newUser.wallet.startsWith('0x') || newUser.wallet.length !== 42) {
+      setError('Please enter a valid wallet address (0x...)');
+      setIsLoading(false);
       return;
     }
 
-    const id = users.length ? users[users.length - 1].id + 1 : 1;
-    setUsers([...users, { id, ...newUser }]);
-    setNewUser({ name: '', wallet: '', role: 'Seller' });
-    setIsModalOpen(false);
+    try {
+      // Convert role to number for smart contract
+      const roleMap = {
+        'Manager': 1,
+        'Seller': 2,
+        'Supplier': 3
+      };
+      
+      const roleNumber = roleMap[newUser.role as keyof typeof roleMap];
+
+      console.log('Creating user with:', {
+        address: newUser.wallet,
+        role: roleNumber,
+        displayName: newUser.name
+      });
+
+      // Call smart contract createUser function
+      const result = await writeContract(config, {
+        address: UserHandlingContractAddress as `0x${string}`,
+        abi: UserHandlingABI.abi,
+        functionName: 'createUser',
+        args: [
+          newUser.wallet as `0x${string}`,
+          roleNumber,
+          newUser.name
+        ],
+      });
+
+      console.log('Transaction hash:', result);
+
+      // Add to local state for immediate UI update
+      const id = users.length ? users[users.length - 1].id + 1 : 1;
+      setUsers([...users, { id, ...newUser }]);
+      
+      // Reset form
+      setNewUser({ name: '', wallet: '', role: 'Seller' });
+      setIsModalOpen(false);
+      
+      alert('User created successfully!');
+
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+      setError(error.message || 'Failed to create user. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -109,6 +155,7 @@ export default function ManagerDashboard() {
                   setNewUser({ ...newUser, name: e.target.value })
                 }
                 placeholder="Enter user's name"
+                disabled={isLoading}
               />
 
               <label>Wallet Address</label>
@@ -119,6 +166,7 @@ export default function ManagerDashboard() {
                   setNewUser({ ...newUser, wallet: e.target.value })
                 }
                 placeholder="0x..."
+                disabled={isLoading}
               />
 
               <label>Role</label>
@@ -127,10 +175,12 @@ export default function ManagerDashboard() {
                 onChange={(e) =>
                   setNewUser({
                     ...newUser,
-                    role: e.target.value as 'Seller' | 'Supplier',
+                    role: e.target.value as 'Manager' | 'Seller' | 'Supplier',
                   })
                 }
+                disabled={isLoading}
               >
+                <option value="Manager">Manager</option>
                 <option value="Seller">Seller</option>
                 <option value="Supplier">Supplier</option>
               </select>
@@ -139,13 +189,19 @@ export default function ManagerDashboard() {
               {error && <p className="error-message">{error}</p>}
 
               <div className="modal-actions">
-                <button onClick={handleAddUser}>Add</button>
+                <button 
+                  onClick={handleAddUser}
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Creating...' : 'Add'}
+                </button>
                 <button
                   className="cancel-btn"
                   onClick={() => {
                     setIsModalOpen(false);
                     setError('');
                   }}
+                  disabled={isLoading}
                 >
                   Cancel
                 </button>
