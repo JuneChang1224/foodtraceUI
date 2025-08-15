@@ -56,7 +56,9 @@ export default function SellerDashboard() {
               Loading products from blockchain...
             </div>
           ) : products.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+            <div
+              style={{ textAlign: 'center', padding: '2rem', color: '#666' }}
+            >
               No products found. Create your first product!
             </div>
           ) : (
@@ -79,15 +81,22 @@ export default function SellerDashboard() {
                     <td>{product.batchId}</td>
                     <td>{formatDate(product.createdAt)}</td>
                     <td>
-                      <span style={{
-                        background: product.status === 0 ? '#6B7280' : 
-                                   product.status === 1 ? '#F59E0B' : 
-                                   product.status === 2 ? '#10B981' : '#EF4444',
-                        color: 'white',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '12px'
-                      }}>
+                      <span
+                        style={{
+                          background:
+                            product.status === 0
+                              ? '#6B7280'
+                              : product.status === 1
+                              ? '#F59E0B'
+                              : product.status === 2
+                              ? '#10B981'
+                              : '#EF4444',
+                          color: 'white',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                        }}
+                      >
                         {product.statusText}
                       </span>
                     </td>

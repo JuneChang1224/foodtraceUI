@@ -5,13 +5,20 @@ import { Header } from '@/app/components/Header';
 import { Footer } from '@/app/components/Footer';
 import { useRouter } from 'next/navigation';
 import { writeContract } from '@wagmi/core';
-import { config, getAllIngredientsWithNames, IngredientDetails, getProductsForSupplierApproval, hasSupplierResponded, ProductDetails } from '@/utils/web3config';
+import {
+  config,
+  getAllIngredientsWithNames,
+  IngredientDetails,
+  getProductsForSupplierApproval,
+  hasSupplierResponded,
+  ProductDetails,
+} from '@/utils/web3config';
 import { SupplyChainContractAddress } from '@/utils/smartContractAddress';
 import CompleteSysABI from '@/abi/CompleteSys.json';
 
 export default function SupplierDashboard() {
   const router = useRouter();
-  
+
   // Ingredient modal states
   const [isIngredientModalOpen, setIsIngredientModalOpen] = useState(false);
   const [newIngredient, setNewIngredient] = useState({
@@ -21,15 +28,20 @@ export default function SupplierDashboard() {
   const [userAddress, setUserAddress] = useState<string | null>(null);
   const [ingredientError, setIngredientError] = useState('');
   const [isIngredientLoading, setIsIngredientLoading] = useState(false);
-  
+
   // Ingredients state
   const [ingredients, setIngredients] = useState<IngredientDetails[]>([]);
   const [isIngredientsLoading, setIsIngredientsLoading] = useState(true);
 
   // Product approval state
-  const [approvalProducts, setApprovalProducts] = useState<ProductDetails[]>([]);
-  const [isApprovalProductsLoading, setIsApprovalProductsLoading] = useState(true);
-  const [productResponses, setProductResponses] = useState<{ [key: number]: boolean }>({});
+  const [approvalProducts, setApprovalProducts] = useState<ProductDetails[]>(
+    []
+  );
+  const [isApprovalProductsLoading, setIsApprovalProductsLoading] =
+    useState(true);
+  const [productResponses, setProductResponses] = useState<{
+    [key: number]: boolean;
+  }>({});
 
   // Get user address from localStorage
   useEffect(() => {
@@ -59,7 +71,7 @@ export default function SupplierDashboard() {
   useEffect(() => {
     const loadApprovalProducts = async () => {
       if (!userAddress) return;
-      
+
       setIsApprovalProductsLoading(true);
       try {
         const productsData = await getProductsForSupplierApproval(userAddress);
@@ -68,7 +80,10 @@ export default function SupplierDashboard() {
         // Check response status for each product
         const responses: { [key: number]: boolean } = {};
         for (const product of productsData) {
-          const hasResponded = await hasSupplierResponded(product.id, userAddress);
+          const hasResponded = await hasSupplierResponded(
+            product.id,
+            userAddress
+          );
           responses[product.id] = hasResponded;
         }
         setProductResponses(responses);
@@ -97,18 +112,22 @@ export default function SupplierDashboard() {
       });
 
       console.log('Approval transaction hash:', result);
-      
+
       // Update local state to reflect the approval
-      setProductResponses(prev => ({ ...prev, [productId]: true }));
-      
+      setProductResponses((prev) => ({ ...prev, [productId]: true }));
+
       // Reload approval products to get updated status
       const productsData = await getProductsForSupplierApproval(userAddress);
       setApprovalProducts(productsData);
 
       alert('✅ Product approved successfully!');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error approving product:', error);
-      alert('❌ Failed to approve product: ' + (error.message || 'Unknown error'));
+      let errorMessage = 'Unknown error';
+      if (typeof error === 'object' && error !== null && 'message' in error) {
+        errorMessage = String((error as { message?: string }).message);
+      }
+      alert('❌ Failed to approve product: ' + errorMessage);
     }
   };
 
@@ -127,21 +146,24 @@ export default function SupplierDashboard() {
       });
 
       console.log('Rejection transaction hash:', result);
-      
+
       // Update local state to reflect the rejection
-      setProductResponses(prev => ({ ...prev, [productId]: true }));
-      
+      setProductResponses((prev) => ({ ...prev, [productId]: true }));
+
       // Reload approval products to get updated status
       const productsData = await getProductsForSupplierApproval(userAddress);
       setApprovalProducts(productsData);
 
       alert('✅ Product rejected successfully!');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error rejecting product:', error);
-      alert('❌ Failed to reject product: ' + (error.message || 'Unknown error'));
+      let errorMessage = 'Unknown error';
+      if (typeof error === 'object' && error !== null && 'message' in error) {
+        errorMessage = String((error as { message?: string }).message);
+      }
+      alert('❌ Failed to reject product: ' + errorMessage);
     }
   };
-
 
   const handleAddIngredient = async () => {
     setIngredientError('');
@@ -170,7 +192,7 @@ export default function SupplierDashboard() {
       console.log('Adding ingredient with:', {
         name: newIngredient.name,
         supplierAddr: userAddress,
-        category: newIngredient.type
+        category: newIngredient.type,
       });
 
       // Call smart contract addIngredient function
@@ -179,9 +201,9 @@ export default function SupplierDashboard() {
         abi: CompleteSysABI.abi,
         functionName: 'addIngredient',
         args: [
-          newIngredient.name,           // name
+          newIngredient.name, // name
           userAddress as `0x${string}`, // supplierAddr (from current user)
-          newIngredient.type            // category (from type field)
+          newIngredient.type, // category (from type field)
         ],
       });
 
@@ -190,16 +212,19 @@ export default function SupplierDashboard() {
       // Reset form and close modal
       setNewIngredient({ name: '', type: '' });
       setIsIngredientModalOpen(false);
-      
+
       // Reload ingredients after successful addition
       const ingredientsData = await getAllIngredientsWithNames();
       setIngredients(ingredientsData);
-      
-      alert('Ingredient added successfully!');
 
-    } catch (error: any) {
+      alert('Ingredient added successfully!');
+    } catch (error: unknown) {
       console.error('Error adding ingredient:', error);
-      setIngredientError(error.message || 'Failed to add ingredient. Please try again.');
+      let errorMessage = 'Failed to add ingredient. Please try again.';
+      if (typeof error === 'object' && error !== null && 'message' in error) {
+        errorMessage = String((error as { message?: string }).message);
+      }
+      setIngredientError(errorMessage);
     } finally {
       setIsIngredientLoading(false);
     }
@@ -229,7 +254,9 @@ export default function SupplierDashboard() {
               Loading products requiring approval...
             </div>
           ) : approvalProducts.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+            <div
+              style={{ textAlign: 'center', padding: '2rem', color: '#666' }}
+            >
               No products requiring your approval at the moment.
             </div>
           ) : (
@@ -251,19 +278,28 @@ export default function SupplierDashboard() {
                     <td>{product.name}</td>
                     <td>{product.batchId}</td>
                     <td>
-                      <span style={{
-                        background: product.status === 0 ? '#6B7280' : 
-                                   product.status === 1 ? '#F59E0B' : 
-                                   product.status === 2 ? '#10B981' : '#EF4444',
-                        color: 'white',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '12px'
-                      }}>
+                      <span
+                        style={{
+                          background:
+                            product.status === 0
+                              ? '#6B7280'
+                              : product.status === 1
+                              ? '#F59E0B'
+                              : product.status === 2
+                              ? '#10B981'
+                              : '#EF4444',
+                          color: 'white',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                        }}
+                      >
                         {product.statusText}
                       </span>
                     </td>
-                    <td>{product.approved}/{product.total} suppliers</td>
+                    <td>
+                      {product.approved}/{product.total} suppliers
+                    </td>
                     <td>
                       {productResponses[product.id] ? (
                         <span style={{ color: '#10B981', fontWeight: 'bold' }}>
@@ -295,14 +331,13 @@ export default function SupplierDashboard() {
 
         <div className="dashboard-header" style={{ marginTop: '3rem' }}>
           <h2>Manage Ingredients</h2>
-          <button 
-            className="add-user-btn" 
+          <button
+            className="add-user-btn"
             onClick={() => setIsIngredientModalOpen(true)}
           >
             Add Ingredient
           </button>
         </div>
-
 
         {/* Ingredients Table */}
         <div className="dashboard-header" style={{ marginTop: '2rem' }}>
@@ -315,7 +350,9 @@ export default function SupplierDashboard() {
               Loading ingredients...
             </div>
           ) : ingredients.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+            <div
+              style={{ textAlign: 'center', padding: '2rem', color: '#666' }}
+            >
               No ingredients available yet. Add the first ingredient!
             </div>
           ) : (
@@ -335,7 +372,11 @@ export default function SupplierDashboard() {
                     <td>{ingredient.name}</td>
                     <td>{ingredient.category}</td>
                     <td>
-                      {ingredient.supplierName || `${ingredient.supplierAddress.slice(0, 6)}...${ingredient.supplierAddress.slice(-4)}`}
+                      {ingredient.supplierName ||
+                        `${ingredient.supplierAddress.slice(
+                          0,
+                          6
+                        )}...${ingredient.supplierAddress.slice(-4)}`}
                     </td>
                   </tr>
                 ))}
@@ -349,10 +390,13 @@ export default function SupplierDashboard() {
 
         {/* Add Ingredient Modal */}
         {isIngredientModalOpen && (
-          <div className="modal-overlay" onClick={() => setIsIngredientModalOpen(false)}>
+          <div
+            className="modal-overlay"
+            onClick={() => setIsIngredientModalOpen(false)}
+          >
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <h2>Add New Ingredient</h2>
-              
+
               <label>Ingredient Name</label>
               <input
                 type="text"
@@ -376,10 +420,12 @@ export default function SupplierDashboard() {
               />
 
               {/* Error Message */}
-              {ingredientError && <p className="error-message">{ingredientError}</p>}
+              {ingredientError && (
+                <p className="error-message">{ingredientError}</p>
+              )}
 
               <div className="modal-actions">
-                <button 
+                <button
                   onClick={handleAddIngredient}
                   disabled={isIngredientLoading}
                 >
