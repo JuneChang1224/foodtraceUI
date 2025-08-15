@@ -26,9 +26,12 @@ export const config = wagmiAdapter.wagmiConfig;
 
 // Import for smart contract interaction
 import { readContract } from '@wagmi/core';
-import { UserHandlingContractAddress, SupplyChainContractAddress } from './smartContractAddress';
+import {
+  UserHandlingContractAddress,
+  SupplyChainContractAddress,
+} from './smartContractAddress';
 import UserHandlingABI from '../abi/Userhandling.json';
-import CompleteSysABI from '../abi/CompleteSys.json';
+import CompleteSysABI from '../abi/Supplychain.json';
 
 // Function to get user role from smart contract
 export async function getUserRole(userAddress: string) {
@@ -46,18 +49,18 @@ export async function getUserRole(userAddress: string) {
 
     // Type the result properly
     const typedResult = result as [number, string, bigint];
-    
+
     return {
       role: Number(typedResult[0]),
       displayName: typedResult[1],
-      registeredAt: Number(typedResult[2])
+      registeredAt: Number(typedResult[2]),
     };
   } catch (error) {
     console.error('Error getting user role:', error);
     return {
       role: 0, // Unregistered
       displayName: 'Unregistered User',
-      registeredAt: 0
+      registeredAt: 0,
     };
   }
 }
@@ -93,18 +96,23 @@ export async function getAllUsersWithDetails(): Promise<UserDetails[]> {
       number[], // roles
       string[], // displayNames
       bigint[], // registeredAts
-      string[]  // registeredBys
+      string[] // registeredBys
     ];
 
-    const [addresses, roles, displayNames, registeredAts, registeredBys] = typedResult;
+    const [addresses, roles, displayNames, registeredAts, registeredBys] =
+      typedResult;
 
     // Helper function to convert role number to text
     const getRoleText = (role: number): string => {
       switch (role) {
-        case 1: return 'Manager';
-        case 2: return 'Seller';
-        case 3: return 'Supplier';
-        default: return 'Unregistered';
+        case 1:
+          return 'Manager';
+        case 2:
+          return 'Seller';
+        case 3:
+          return 'Supplier';
+        default:
+          return 'Unregistered';
       }
     };
 
@@ -115,7 +123,7 @@ export async function getAllUsersWithDetails(): Promise<UserDetails[]> {
       displayName: displayNames[index],
       registeredAt: Number(registeredAts[index]),
       registeredBy: registeredBys[index],
-      roleText: getRoleText(Number(roles[index]))
+      roleText: getRoleText(Number(roles[index])),
     }));
 
     return users;
@@ -141,12 +149,15 @@ export async function getUserStats() {
 
     // Type the result properly
     const typedResult = result as [bigint, bigint, bigint];
-    
+
     return {
       managers: Number(typedResult[0]),
       sellers: Number(typedResult[1]),
       suppliers: Number(typedResult[2]),
-      total: Number(typedResult[0]) + Number(typedResult[1]) + Number(typedResult[2])
+      total:
+        Number(typedResult[0]) +
+        Number(typedResult[1]) +
+        Number(typedResult[2]),
     };
   } catch (error) {
     console.error('Error getting user stats:', error);
@@ -154,7 +165,7 @@ export async function getUserStats() {
       managers: 0,
       sellers: 0,
       suppliers: 0,
-      total: 0
+      total: 0,
     };
   }
 }
@@ -187,7 +198,7 @@ export async function getAllIngredients(): Promise<IngredientDetails[]> {
       bigint[], // ids
       string[], // names
       string[], // categories
-      string[]  // supplierAddresses
+      string[] // supplierAddresses
     ];
 
     const [ids, names, categories, supplierAddresses] = typedResult;
@@ -197,7 +208,7 @@ export async function getAllIngredients(): Promise<IngredientDetails[]> {
       id: Number(id),
       name: names[index],
       category: categories[index],
-      supplierAddress: supplierAddresses[index]
+      supplierAddress: supplierAddresses[index],
     }));
 
     return ingredients;
@@ -223,7 +234,7 @@ export async function getUserDisplayName(userAddress: string): Promise<string> {
 
     // Type the result properly
     const typedResult = result as [number, string, bigint];
-    
+
     // If user is registered, return display name, otherwise return shortened address
     if (Number(typedResult[0]) > 0) {
       return typedResult[1] || 'Unknown User';
@@ -238,7 +249,9 @@ export async function getUserDisplayName(userAddress: string): Promise<string> {
 }
 
 // Enhanced function to get all available ingredients with supplier names
-export async function getAllIngredientsWithNames(): Promise<IngredientDetails[]> {
+export async function getAllIngredientsWithNames(): Promise<
+  IngredientDetails[]
+> {
   try {
     if (!SupplyChainContractAddress) {
       throw new Error('SupplyChain contract address not found');
@@ -256,7 +269,7 @@ export async function getAllIngredientsWithNames(): Promise<IngredientDetails[]>
       bigint[], // ids
       string[], // names
       string[], // categories
-      string[]  // supplierAddresses
+      string[] // supplierAddresses
     ];
 
     const [ids, names, categories, supplierAddresses] = typedResult;
@@ -270,7 +283,7 @@ export async function getAllIngredientsWithNames(): Promise<IngredientDetails[]>
           name: names[index],
           category: categories[index],
           supplierAddress: supplierAddresses[index],
-          supplierName: supplierName
+          supplierName: supplierName,
         };
       })
     );
@@ -330,27 +343,42 @@ export async function getAllProducts(): Promise<ProductDetails[]> {
 
         // Type the result properly
         const typedResult = result as [
-          string,    // name
-          string,    // batchId
-          bigint[],  // ingredientIds
-          string[],  // suppliers
-          number,    // approved
-          number,    // total
-          number,    // status
-          bigint,    // createdAt
-          bigint     // approvedAt
+          string, // name
+          string, // batchId
+          bigint[], // ingredientIds
+          string[], // suppliers
+          number, // approved
+          number, // total
+          number, // status
+          bigint, // createdAt
+          bigint // approvedAt
         ];
 
-        const [name, batchId, ingredientIds, suppliers, approved, total, status, createdAt, approvedAt] = typedResult;
+        const [
+          name,
+          batchId,
+          ingredientIds,
+          suppliers,
+          approved,
+          total,
+          status,
+          createdAt,
+          approvedAt,
+        ] = typedResult;
 
         // Convert status number to text
         const getStatusText = (status: number): string => {
           switch (status) {
-            case 0: return 'Created';
-            case 1: return 'Pending';
-            case 2: return 'Approved';
-            case 3: return 'Rejected';
-            default: return 'Unknown';
+            case 0:
+              return 'Created';
+            case 1:
+              return 'Pending';
+            case 2:
+              return 'Approved';
+            case 3:
+              return 'Rejected';
+            default:
+              return 'Unknown';
           }
         };
 
@@ -358,14 +386,14 @@ export async function getAllProducts(): Promise<ProductDetails[]> {
           id: Number(id),
           name,
           batchId,
-          ingredientIds: ingredientIds.map(id => Number(id)),
+          ingredientIds: ingredientIds.map((id) => Number(id)),
           suppliers,
           approved,
           total,
           status,
           createdAt: Number(createdAt),
           approvedAt: Number(approvedAt),
-          statusText: getStatusText(status)
+          statusText: getStatusText(status),
         };
       })
     );
@@ -378,7 +406,9 @@ export async function getAllProducts(): Promise<ProductDetails[]> {
 }
 
 // Function to get products that need supplier approval (for current user)
-export async function getProductsForSupplierApproval(supplierAddress: string): Promise<ProductDetails[]> {
+export async function getProductsForSupplierApproval(
+  supplierAddress: string
+): Promise<ProductDetails[]> {
   try {
     if (!SupplyChainContractAddress) {
       throw new Error('SupplyChain contract address not found');
@@ -386,14 +416,15 @@ export async function getProductsForSupplierApproval(supplierAddress: string): P
 
     // Get all products first
     const allProducts = await getAllProducts();
-    
+
     // Filter products where:
     // 1. Current supplier is involved (in suppliers array)
     // 2. Product status is 0 (Created) or 1 (Pending) - not yet fully approved/rejected
     // 3. Current supplier hasn't approved/rejected yet
-    const productsForApproval = allProducts.filter(product => 
-      product.suppliers.includes(supplierAddress) && 
-      (product.status === 0 || product.status === 1)
+    const productsForApproval = allProducts.filter(
+      (product) =>
+        product.suppliers.includes(supplierAddress) &&
+        (product.status === 0 || product.status === 1)
     );
 
     return productsForApproval;
@@ -404,7 +435,10 @@ export async function getProductsForSupplierApproval(supplierAddress: string): P
 }
 
 // Function to check if supplier has already responded to a product
-export async function hasSupplierResponded(productId: number, supplierAddress: string): Promise<boolean> {
+export async function hasSupplierResponded(
+  productId: number,
+  supplierAddress: string
+): Promise<boolean> {
   try {
     if (!SupplyChainContractAddress) {
       throw new Error('SupplyChain contract address not found');
@@ -429,10 +463,12 @@ export async function hasSupplierResponded(productId: number, supplierAddress: s
 export async function getApprovedProducts(): Promise<ProductDetails[]> {
   try {
     const allProducts = await getAllProducts();
-    
+
     // Filter to show only approved products (status === 2)
-    const approvedProducts = allProducts.filter(product => product.status === 2);
-    
+    const approvedProducts = allProducts.filter(
+      (product) => product.status === 2
+    );
+
     return approvedProducts;
   } catch (error) {
     console.error('Error getting approved products:', error);
@@ -454,7 +490,9 @@ export interface ProductTraceability {
 }
 
 // Function to get complete product traceability for consumers
-export async function getProductTraceability(productId: number): Promise<ProductTraceability | null> {
+export async function getProductTraceability(
+  productId: number
+): Promise<ProductTraceability | null> {
   try {
     if (!SupplyChainContractAddress) {
       throw new Error('SupplyChain contract address not found');
@@ -469,21 +507,30 @@ export async function getProductTraceability(productId: number): Promise<Product
 
     // Type the result properly
     const typedResult = result as [
-      string,    // productName
-      string,    // batchId
-      string[],  // ingredientNames
-      string[],  // ingredientCategories
-      string[],  // supplierAddresses
-      bigint,    // createdAt
-      bigint,    // approvedAt
-      number     // status
+      string, // productName
+      string, // batchId
+      string[], // ingredientNames
+      string[], // ingredientCategories
+      string[], // supplierAddresses
+      bigint, // createdAt
+      bigint, // approvedAt
+      number // status
     ];
 
-    const [productName, batchId, ingredientNames, ingredientCategories, supplierAddresses, createdAt, approvedAt, status] = typedResult;
+    const [
+      productName,
+      batchId,
+      ingredientNames,
+      ingredientCategories,
+      supplierAddresses,
+      createdAt,
+      approvedAt,
+      status,
+    ] = typedResult;
 
     // Get supplier names for each address
     const supplierNames = await Promise.all(
-      supplierAddresses.map(address => getUserDisplayName(address))
+      supplierAddresses.map((address) => getUserDisplayName(address))
     );
 
     return {
@@ -495,7 +542,7 @@ export async function getProductTraceability(productId: number): Promise<Product
       supplierNames,
       createdAt: Number(createdAt),
       approvedAt: Number(approvedAt),
-      status
+      status,
     };
   } catch (error) {
     console.error('Error getting product traceability:', error);

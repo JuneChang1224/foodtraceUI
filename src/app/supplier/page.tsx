@@ -14,7 +14,7 @@ import {
   ProductDetails,
 } from '@/utils/web3config';
 import { SupplyChainContractAddress } from '@/utils/smartContractAddress';
-import CompleteSysABI from '@/abi/CompleteSys.json';
+import CompleteSysABI from '@/abi/Supplychain.json';
 
 export default function SupplierDashboard() {
   const router = useRouter();

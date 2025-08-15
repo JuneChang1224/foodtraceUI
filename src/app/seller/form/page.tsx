@@ -6,11 +6,14 @@ import Select from 'react-select';
 
 import { Header } from '@/app/components/Header';
 import { Footer } from '@/app/components/Footer';
-import { getAllIngredientsWithNames, IngredientDetails } from '@/utils/web3config';
+import {
+  getAllIngredientsWithNames,
+  IngredientDetails,
+} from '@/utils/web3config';
 import { writeContract } from '@wagmi/core';
 import { config } from '@/utils/web3config';
 import { SupplyChainContractAddress } from '@/utils/smartContractAddress';
-import CompleteSysABI from '@/abi/CompleteSys.json';
+import CompleteSysABI from '@/abi/Supplychain.json';
 
 export default function ProductForm() {
   const router = useRouter();
@@ -57,9 +60,14 @@ export default function ProductForm() {
   };
 
   // Create options for react-select from blockchain ingredients
-  const ingredientOptions = ingredients.map(ingredient => ({
+  const ingredientOptions = ingredients.map((ingredient) => ({
     value: ingredient.id,
-    label: `${ingredient.name} (${ingredient.category}) - by ${ingredient.supplierName || ingredient.supplierAddress.slice(0, 6) + '...' + ingredient.supplierAddress.slice(-4)}`
+    label: `${ingredient.name} (${ingredient.category}) - by ${
+      ingredient.supplierName ||
+      ingredient.supplierAddress.slice(0, 6) +
+        '...' +
+        ingredient.supplierAddress.slice(-4)
+    }`,
   }));
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,7 +79,11 @@ export default function ProductForm() {
     setLoading(true);
 
     // Validation
-    if (!formData.productName.trim() || !formData.batchId.trim() || formData.ingredients.length === 0) {
+    if (
+      !formData.productName.trim() ||
+      !formData.batchId.trim() ||
+      formData.ingredients.length === 0
+    ) {
       setError('All fields must be filled.');
       setLoading(false);
       return;
@@ -87,7 +99,7 @@ export default function ProductForm() {
       console.log('Creating product with:', {
         name: formData.productName,
         batchId: formData.batchId,
-        ingredientIds: formData.ingredients
+        ingredientIds: formData.ingredients,
       });
 
       // Call smart contract createProduct function
@@ -96,17 +108,19 @@ export default function ProductForm() {
         abi: CompleteSysABI.abi,
         functionName: 'createProduct',
         args: [
-          formData.productName,     // name
-          formData.batchId,         // batchId
-          formData.ingredients      // ingredientIds array
+          formData.productName, // name
+          formData.batchId, // batchId
+          formData.ingredients, // ingredientIds array
         ],
       });
 
       console.log('Transaction hash:', result);
 
       setStatus('success');
-      alert('✅ Product created successfully and submitted for supplier approval!');
-      
+      alert(
+        '✅ Product created successfully and submitted for supplier approval!'
+      );
+
       // Reset form
       setFormData({
         productName: '',
@@ -116,7 +130,6 @@ export default function ProductForm() {
 
       // Navigate back to seller dashboard to see the newly created product
       router.push('/seller');
-
     } catch (error: any) {
       console.error('Error creating product:', error);
       setError(error.message || 'Failed to create product. Please try again.');
@@ -171,7 +184,14 @@ export default function ProductForm() {
         <div style={{ height: '2rem' }}></div>
 
         {/* Error Message */}
-        {error && <p className="error-message" style={{ color: 'red', marginBottom: '1rem' }}>{error}</p>}
+        {error && (
+          <p
+            className="error-message"
+            style={{ color: 'red', marginBottom: '1rem' }}
+          >
+            {error}
+          </p>
+        )}
 
         <button onClick={handleSubmit} disabled={loading}>
           {loading ? 'Creating Product...' : 'Submit Product'}

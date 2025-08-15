@@ -1,7 +1,7 @@
 {
   "_format": "hh-sol-artifact-1",
   "contractName": "SupplyChain",
-  "sourceName": "contracts/Supplycahin.sol",
+  "sourceName": "contracts/Supplychain.sol",
   "abi": [
     {
       "inputs": [],
