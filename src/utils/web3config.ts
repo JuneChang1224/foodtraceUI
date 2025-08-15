@@ -26,14 +26,11 @@ export const config = wagmiAdapter.wagmiConfig;
 
 // Import for smart contract interaction
 import { readContract } from '@wagmi/core';
-<<<<<<< Updated upstream
-import { UserHandlingContractAddress } from './smartContractAddress';
-=======
+// import { UserHandlingContractAddress } from './smartContractAddress';
 import {
   UserHandlingContractAddress,
   SupplyChainContractAddress,
 } from './smartContractAddress';
->>>>>>> Stashed changes
 import UserHandlingABI from '../abi/Userhandling.json';
 
 // Function to get user role from smart contract
@@ -66,8 +63,6 @@ export async function getUserRole(userAddress: string) {
     };
   }
 }
-<<<<<<< Updated upstream
-=======
 
 // Types for user details
 export interface UserDetails {
@@ -554,4 +549,3 @@ export async function getProductTraceability(
     return null;
   }
 }
->>>>>>> Stashed changes
