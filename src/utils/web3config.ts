@@ -26,12 +26,12 @@ export const config = wagmiAdapter.wagmiConfig;
 
 // Import for smart contract interaction
 import { readContract } from '@wagmi/core';
-// import { UserHandlingContractAddress } from './smartContractAddress';
 import {
   UserHandlingContractAddress,
   SupplyChainContractAddress,
 } from './smartContractAddress';
 import UserHandlingABI from '../abi/Userhandling.json';
+import CompleteSysABI from '../abi/CompleteSys.json';
 
 // Function to get user role from smart contract
 export async function getUserRole(userAddress: string) {
@@ -39,6 +39,7 @@ export async function getUserRole(userAddress: string) {
     if (!UserHandlingContractAddress) {
       throw new Error('Contract address not found');
     }
+
     const result = await readContract(config, {
       address: UserHandlingContractAddress as `0x${string}`,
       abi: UserHandlingABI.abi,
@@ -545,7 +546,6 @@ export async function getProductTraceability(
     };
   } catch (error) {
     console.error('Error getting product traceability:', error);
-    console.error('this line is use to test push to main branch');
     return null;
   }
 }

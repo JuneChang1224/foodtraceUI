@@ -5,38 +5,18 @@ import { Header } from '@/app/components/Header';
 import { Footer } from '@/app/components/Footer';
 import { useRouter } from 'next/navigation';
 import { writeContract } from '@wagmi/core';
-import { config } from '@/utils/web3config';
+import {
+  config,
+  getAllIngredientsWithNames,
+  IngredientDetails,
+  getProductsForSupplierApproval,
+  hasSupplierResponded,
+  ProductDetails,
+} from '@/utils/web3config';
 import { SupplyChainContractAddress } from '@/utils/smartContractAddress';
 import CompleteSysABI from '@/abi/CompleteSys.json';
 
-type Product = {
-  id: number;
-  name: string;
-  batch: string;
-  date: string;
-  status: 'Pending' | 'Approved' | 'Rejected';
-};
-
-const initialProducts: Product[] = [
-  {
-    id: 1,
-    name: 'Organic Mango Juice',
-    batch: 'MJX-202507',
-    date: '2025-07-29',
-    status: 'Pending',
-  },
-  {
-    id: 2,
-    name: 'Papaya Salad Kit',
-    batch: 'PSK-202508',
-    date: '2025-07-15',
-    status: 'Pending',
-  },
-];
-
 export default function SupplierDashboard() {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const router = useRouter();
 
   // Ingredient modal states
@@ -49,6 +29,20 @@ export default function SupplierDashboard() {
   const [ingredientError, setIngredientError] = useState('');
   const [isIngredientLoading, setIsIngredientLoading] = useState(false);
 
+  // Ingredients state
+  const [ingredients, setIngredients] = useState<IngredientDetails[]>([]);
+  const [isIngredientsLoading, setIsIngredientsLoading] = useState(true);
+
+  // Product approval state
+  const [approvalProducts, setApprovalProducts] = useState<ProductDetails[]>(
+    []
+  );
+  const [isApprovalProductsLoading, setIsApprovalProductsLoading] =
+    useState(true);
+  const [productResponses, setProductResponses] = useState<{
+    [key: number]: boolean;
+  }>({});
+
   // Get user address from localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -56,22 +50,119 @@ export default function SupplierDashboard() {
     }
   }, []);
 
-  const handleDecision = (id: number, decision: 'Approved' | 'Rejected') => {
-    const updated = products.map((product) =>
-      product.id === id ? { ...product, status: decision } : product
-    );
-    setProducts(updated);
-  };
+  // Load ingredients from blockchain
+  useEffect(() => {
+    const loadIngredients = async () => {
+      setIsIngredientsLoading(true);
+      try {
+        const ingredientsData = await getAllIngredientsWithNames();
+        setIngredients(ingredientsData);
+      } catch (error) {
+        console.error('Error loading ingredients:', error);
+      } finally {
+        setIsIngredientsLoading(false);
+      }
+    };
 
-  const handleViewProduct = (id: number) => {
-    const product = products.find((p) => p.id === id);
-    if (product) {
-      setSelectedProduct(product);
+    loadIngredients();
+  }, []);
+
+  // Load products that need approval
+  useEffect(() => {
+    const loadApprovalProducts = async () => {
+      if (!userAddress) return;
+
+      setIsApprovalProductsLoading(true);
+      try {
+        const productsData = await getProductsForSupplierApproval(userAddress);
+        setApprovalProducts(productsData);
+
+        // Check response status for each product
+        const responses: { [key: number]: boolean } = {};
+        for (const product of productsData) {
+          const hasResponded = await hasSupplierResponded(
+            product.id,
+            userAddress
+          );
+          responses[product.id] = hasResponded;
+        }
+        setProductResponses(responses);
+      } catch (error) {
+        console.error('Error loading approval products:', error);
+      } finally {
+        setIsApprovalProductsLoading(false);
+      }
+    };
+
+    loadApprovalProducts();
+  }, [userAddress]);
+
+  // Handle product approval
+  const handleApproveProduct = async (productId: number) => {
+    if (!userAddress) return;
+
+    try {
+      console.log('Approving product:', productId);
+
+      const result = await writeContract(config, {
+        address: SupplyChainContractAddress as `0x${string}`,
+        abi: CompleteSysABI.abi,
+        functionName: 'approveProduct',
+        args: [productId],
+      });
+
+      console.log('Approval transaction hash:', result);
+
+      // Update local state to reflect the approval
+      setProductResponses((prev) => ({ ...prev, [productId]: true }));
+
+      // Reload approval products to get updated status
+      const productsData = await getProductsForSupplierApproval(userAddress);
+      setApprovalProducts(productsData);
+
+      alert('✅ Product approved successfully!');
+    } catch (error: unknown) {
+      console.error('Error approving product:', error);
+      let errorMessage = 'Unknown error';
+      if (typeof error === 'object' && error !== null && 'message' in error) {
+        errorMessage = String((error as { message?: string }).message);
+      }
+      alert('❌ Failed to approve product: ' + errorMessage);
     }
   };
 
-  const closeModal = () => {
-    setSelectedProduct(null);
+  // Handle product rejection
+  const handleRejectProduct = async (productId: number) => {
+    if (!userAddress) return;
+
+    try {
+      console.log('Rejecting product:', productId);
+
+      const result = await writeContract(config, {
+        address: SupplyChainContractAddress as `0x${string}`,
+        abi: CompleteSysABI.abi,
+        functionName: 'rejectProduct',
+        args: [productId],
+      });
+
+      console.log('Rejection transaction hash:', result);
+
+      // Update local state to reflect the rejection
+      setProductResponses((prev) => ({ ...prev, [productId]: true }));
+
+      // Reload approval products to get updated status
+      const productsData = await getProductsForSupplierApproval(userAddress);
+      setApprovalProducts(productsData);
+
+      alert('✅ Product rejected successfully!');
+    } catch (error: unknown) {
+      console.error('Error rejecting product:', error);
+      let errorMessage = 'Unknown error';
+      if (typeof error === 'object' && error !== null && 'message' in error) {
+        errorMessage = String((error as { message?: string }).message);
+      }
+      alert('❌ Failed to reject product: ' + errorMessage);
+    }
   };
 
   const handleAddIngredient = async () => {
@@ -122,16 +213,18 @@ export default function SupplierDashboard() {
       setNewIngredient({ name: '', type: '' });
       setIsIngredientModalOpen(false);
 
+      // Reload ingredients after successful addition
+      const ingredientsData = await getAllIngredientsWithNames();
+      setIngredients(ingredientsData);
+
       alert('Ingredient added successfully!');
     } catch (error: unknown) {
       console.error('Error adding ingredient:', error);
-      if (error instanceof Error) {
-        setIngredientError(
-          error.message || 'Failed to add ingredient. Please try again.'
-        );
-      } else {
-        setIngredientError('Failed to add ingredient. Please try again.');
+      let errorMessage = 'Failed to add ingredient. Please try again.';
+      if (typeof error === 'object' && error !== null && 'message' in error) {
+        errorMessage = String((error as { message?: string }).message);
       }
+      setIngredientError(errorMessage);
     } finally {
       setIsIngredientLoading(false);
     }
@@ -149,8 +242,95 @@ export default function SupplierDashboard() {
         <h1>🔍 Supplier Dashboard</h1>
         <p>Review submitted products and approve or reject them.</p>
 
+        {/* Product Approval Section */}
         <div className="dashboard-header">
-          <h2>Products</h2>
+          <h2>Products Requiring Approval</h2>
+        </div>
+        <p>Review and approve/reject products that use your ingredients.</p>
+
+        <div className="product-table-wrapper">
+          {isApprovalProductsLoading ? (
+            <div style={{ textAlign: 'center', padding: '2rem' }}>
+              Loading products requiring approval...
+            </div>
+          ) : approvalProducts.length === 0 ? (
+            <div
+              style={{ textAlign: 'center', padding: '2rem', color: '#666' }}
+            >
+              No products requiring your approval at the moment.
+            </div>
+          ) : (
+            <table className="product-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Product Name</th>
+                  <th>Batch ID</th>
+                  <th>Status</th>
+                  <th>Approval Progress</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {approvalProducts.map((product) => (
+                  <tr key={product.id}>
+                    <td>{product.id}</td>
+                    <td>{product.name}</td>
+                    <td>{product.batchId}</td>
+                    <td>
+                      <span
+                        style={{
+                          background:
+                            product.status === 0
+                              ? '#6B7280'
+                              : product.status === 1
+                              ? '#F59E0B'
+                              : product.status === 2
+                              ? '#10B981'
+                              : '#EF4444',
+                          color: 'white',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                        }}
+                      >
+                        {product.statusText}
+                      </span>
+                    </td>
+                    <td>
+                      {product.approved}/{product.total} suppliers
+                    </td>
+                    <td>
+                      {productResponses[product.id] ? (
+                        <span style={{ color: '#10B981', fontWeight: 'bold' }}>
+                          ✓ Responded
+                        </span>
+                      ) : (
+                        <div className="action-buttons">
+                          <button
+                            className="approve-btn"
+                            onClick={() => handleApproveProduct(product.id)}
+                          >
+                            ✅ Approve
+                          </button>
+                          <button
+                            className="reject-btn"
+                            onClick={() => handleRejectProduct(product.id)}
+                          >
+                            ❌ Reject
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        <div className="dashboard-header" style={{ marginTop: '3rem' }}>
+          <h2>Manage Ingredients</h2>
           <button
             className="add-user-btn"
             onClick={() => setIsIngredientModalOpen(true)}
@@ -159,65 +339,54 @@ export default function SupplierDashboard() {
           </button>
         </div>
 
-        <div className="product-table-wrapper">
-          <table className="product-table">
-            <thead>
-              <tr>
-                <th>Product Name</th>
-                <th>Batch</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((product) => (
-                <tr key={product.id}>
-                  <td>{product.name}</td>
-                  <td>{product.batch}</td>
-                  <td>{product.date}</td>
-                  <td className={`status-${product.status.toLowerCase()}`}>
-                    {product.status}
-                  </td>
-                  <td>
-                    {product.status === 'Pending' ? (
-                      <div className="action-buttons">
-                        <button
-                          className="view-btn"
-                          onClick={() => handleViewProduct(product.id)}
-                        >
-                          🔍 View
-                        </button>
-
-                        <button
-                          className="approve-btn"
-                          onClick={() => handleDecision(product.id, 'Approved')}
-                        >
-                          ✅ Approve
-                        </button>
-                        <button
-                          className="reject-btn"
-                          onClick={() => handleDecision(product.id, 'Rejected')}
-                        >
-                          ❌ Reject
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="action-buttons">
-                        <button
-                          className="view-btn"
-                          onClick={() => handleViewProduct(product.id)}
-                        >
-                          🔍 View
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Ingredients Table */}
+        <div className="dashboard-header" style={{ marginTop: '2rem' }}>
+          <h2>Available Ingredients</h2>
         </div>
+
+        <div className="product-table-wrapper">
+          {isIngredientsLoading ? (
+            <div style={{ textAlign: 'center', padding: '2rem' }}>
+              Loading ingredients...
+            </div>
+          ) : ingredients.length === 0 ? (
+            <div
+              style={{ textAlign: 'center', padding: '2rem', color: '#666' }}
+            >
+              No ingredients available yet. Add the first ingredient!
+            </div>
+          ) : (
+            <table className="product-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Ingredient Name</th>
+                  <th>Category</th>
+                  <th>Supplier</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ingredients.map((ingredient) => (
+                  <tr key={ingredient.id}>
+                    <td>{ingredient.id}</td>
+                    <td>{ingredient.name}</td>
+                    <td>{ingredient.category}</td>
+                    <td>
+                      {ingredient.supplierName ||
+                        `${ingredient.supplierAddress.slice(
+                          0,
+                          6
+                        )}...${ingredient.supplierAddress.slice(-4)}`}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Bottom spacing to prevent footer overlap */}
+        <div style={{ height: '4rem' }}></div>
 
         {/* Add Ingredient Modal */}
         {isIngredientModalOpen && (
@@ -275,30 +444,6 @@ export default function SupplierDashboard() {
         )}
       </main>
       <Footer />
-
-      {selectedProduct && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()} // Prevent close when clicking inside
-          >
-            <h2>Product Details</h2>
-            <p>
-              <strong>Name:</strong> {selectedProduct.name}
-            </p>
-            <p>
-              <strong>Batch:</strong> {selectedProduct.batch}
-            </p>
-            <p>
-              <strong>Date:</strong> {selectedProduct.date}
-            </p>
-            <p>
-              <strong>Status:</strong> {selectedProduct.status}
-            </p>
-            <button onClick={closeModal}>Close</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
